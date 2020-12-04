@@ -1,6 +1,3 @@
-# PRS-project
-npm install
-
 ## Run Server
 
 To run server using fs.read
