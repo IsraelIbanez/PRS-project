@@ -4,4 +4,4 @@ UDP Server/Client service transfering files and handling congestion
 ```
 npm install
 ```
-Go to src for script files and deployment information
+Go to **src** folder to access to script files and deployment information
