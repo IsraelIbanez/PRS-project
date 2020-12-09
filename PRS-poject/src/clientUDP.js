@@ -66,41 +66,28 @@ function sendFilename(dataSocket, newPort, filename) {
 async function receiveFile(dataSocket) {
     //var file = fs.createWriteStream('reception.jpg');
     let segment_nb = 0;
-    let receiving = 1;
-    /*
-                
-               
-    */
-
-   const fileWrite = fs.openSync(`./assets/res.jpg`, 'a+');
-        dataSocket.on('message', (msg, info) => {
-            console.log('Segment received: ' + info.size);
-            //console.log(msg.toString())
-            if(msg.toString()=='FINI'){
-                console.log(msg.toString())
-            }else{
-                segment_nb++;
-                //const bytesWritten = fs.writeSync(fileWrite, msg, 0,info.size, null);
-                //console.log(`Segment ${segment_nb}: ${bytesWritten} bytes written.`);
-                console.log(segment_nb)
-                //stream.write(msg);
-
-            }
-
-
-        })
-
-
-
-}
+  
+    const fileWrite = fs.openSync(`./toto.jpg`, 'w');
+    idx = 0
+    dataSocket.on('message', (msg, info) => {
+      console.log('Segment received: ', typeof msg, msg[0], msg.length, segment_nb++, info.size);
+      //console.log(msg.toString())
+      if(msg.toString()!='FINI'){
+        fs.writeSync(fileWrite, msg, 0, msg.length, idx)
+        idx+=msg.length
+      }
+    })
+  }
 
 handShake.then(
-    function (newPort) {//1
+    async function (newPort) {//1
         console.log('Handshake done!');
         const dataSocket = createDataSocket();
         //rl.question("File:", function( filename) {
+        console.time('Measuring time');
         sendFilename(dataSocket, newPort, '1.jpg');
-        receiveFile(dataSocket);
+        await receiveFile(dataSocket);
+        console.timeEnd('Measuring time');
         console.log('Transmission finished')
         //  rl.close();
         // });

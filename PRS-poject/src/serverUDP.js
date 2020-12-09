@@ -81,6 +81,7 @@ function sendFile(dataSocket, info, filename) {
                     //console.log('Aqui sali',bytesToRead)
                     //buffer = new Buffer.alloc(bytesToRead);
                 }
+                console.log((counter_sent ) * MTU);
                 fs.read(fd, buffer, 0, bytesToRead, null,
                     async function (err, bytesR) {
                         if (err) {
@@ -96,6 +97,7 @@ function sendFile(dataSocket, info, filename) {
                                 buffer = new Buffer.alloc(bytesR);
 
                             }
+                           
                             console.log('Val sent: ',counter_sent+1)
                             await dataSocket.send(new Buffer.from(buffer), info.port, info.address, async (error, bytes) => {
                             //await dataSocket.send(new Buffer.from((counter_sent+1).toString()), info.port, info.address, async (error, bytes) => {
@@ -125,14 +127,6 @@ function sendFile(dataSocket, info, filename) {
                     });
                 segment_nb++;
             }
-
-
-
-
-
-
-
-
             console.log('I found it');
         });
     })
@@ -155,7 +149,9 @@ function createDataSocket(port) {
     dataSocket.on('message', async (msg, info) => {
         const fileRegex = /[.]+/;
         if (dataSocketArray.length > 0 && fileRegex.test(msg.toString())) {
+            console.time('Measuring time');
             await sendFile(dataSocketArray[0][0], info, msg.toString());
+            console.timeEnd('Measuring time');
             dataSocketArray[0][0].send(new Buffer.from('FINI'), info.port, info.address, (error, bytes) => {
                 if (error) {
                     console.log(error);

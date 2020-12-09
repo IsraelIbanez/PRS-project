@@ -1,5 +1,6 @@
 
-const { SSL_OP_EPHEMERAL_RSA } = require('constants');
+const util = require('util');
+const sleep = util.promisify(setTimeout)
 const udp = require('dgram');//UDP Socket
 const fs = require('fs'); //Read file
 
@@ -77,36 +78,38 @@ async function sendFile(dataSocket, info, filename) {
         console.log(fileSizeInBytes)
 
         while ((segment_nb - 1) * MTU < fileSizeInBytes) {
-   
+
             if ((segment_nb) * MTU > fileSizeInBytes) {
                 bytesToRead = MTU - (MTU * segment_nb - fileSizeInBytes);
                 buffer = new Buffer.alloc(bytesToRead);
             }
             const bytesRead = fs.readSync(file, buffer, 0, bytesToRead, null);
+            //await sendData(dataSocket,buffer,info.port,infor.address);
+            console.log(`Segment ${segment_nb}: ${bytesRead} bytes read. Buffer size: ${buffer.length}`);
             await dataSocket.send(new Buffer.from(buffer), info.port, info.address, async (error, bytes) => {
                 //await dataSocket.send(new Buffer.from((counter_sent+1).toString()), info.port, info.address, async (error, bytes) => {
-                    if (error) {
-                        console.log(error);
-                        console.log('Error sending')
-                        client.close();
-                    } else {
-                        total_Size = total_Size + bytesRead;
-                        counter_sent++;
-                        if (total_Size == fileSizeInBytes) {
-                            
-                            fs.closeSync(file);
-                            console.log('Done');
-                            resolve('Done')
-                        }
-                        console.log(`Sending packet ${counter_sent} of ${bytes.toString()} sent\n`);
+                if (error) {
+                    console.log(error);
+                    console.log('Error sending')
+                    client.close();
+                } else {
+                    total_Size = total_Size + bytesRead;
+                    counter_sent++;
+                    if (total_Size == fileSizeInBytes) {
 
+                        fs.closeSync(file);
+                        console.log('Done');
+                        resolve('Done')
                     }
-                })
-                segment_nb++;
-            /*console.log(`Segment ${segment_nb}: ${bytesRead} bytes read. Buffer size: ${buffer.length}`);
-            await sendData(dataSocket,buffer,info.port,info.address);
+                    console.log(`Sending packet ${counter_sent} of ${bytes.toString()} sent\n`);
+                }
+            })
+            segment_nb++;
+            //await sleep(1)
             
-            console.log(` #${segment_nb}`)*/
+            //await sendData(dataSocket,buffer,info.port,info.address);
+
+            console.log(` #${segment_nb}`)
 
 
         }
@@ -121,14 +124,14 @@ async function sendFile(dataSocket, info, filename) {
 
 }
 
-async function sendData(socket, buffer,port, address){
+async function sendData(socket, buffer, port, address) {
     await socket.send(new Buffer.from(buffer), port, address, (error, bytes) => {
         if (error) {
             //console.log(error);
             console.log('Error sending')
             client.close();
         } else {
-           // total_Size = total_Size + bytesRead;
+            // total_Size = total_Size + bytesRead;
             console.log(`Sending packet of ${bytes.toString()} bytes`);
         }
     })
@@ -152,6 +155,7 @@ function createDataSocket(port) {
         const fileRegex = /[.]+/;
         if (dataSocketArray.length > 0 && fileRegex.test(msg.toString())) {
             await sendFile(dataSocketArray[0][0], info, msg.toString());
+            await sleep(3000)
             dataSocketArray[0][0].send(new Buffer.from('FINI'), info.port, info.address, (error, bytes) => {
                 if (error) {
                     console.log(error);
